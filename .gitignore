@@ -1,0 +1,10 @@
+/bin/
+/.classpath
+.classpath
+/dist
+/.project
+/build.xml
+/.idea
+/fishtank.iml
+/target
+/out
