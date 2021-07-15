@@ -10,7 +10,7 @@ static char WIFI_SSID[] = "peasenet-iot";
 // Your wifi network password.
 static char WIFI_PASSWORD[] = "peasenetiot2019";
 
-const short VERSION = 1;
+const short VERSION = 2;
 const char* DEVICE_TYPE = "fishtank";
 const char* UPDATE_SERVER = "api.peasenet.com";
 const unsigned short SERVER_PORT = 80;
