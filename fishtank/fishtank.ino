@@ -154,11 +154,19 @@ void sendUpdate(String guid, bool state){
   HttpClient httpClient = HttpClient(wifi, UPDATE_SERVER, SERVER_PORT);
 
   String contentType = "application/x-www-form-urlencoded";
-  String data = "guid=" + guid + "&ip=" + String(WiFi.localIP().toString()) + "&state=" + state + "&sw_version=" + String(VERSION);
+  String data = "guid=" + guid + "&ip=" + IpAddress2String(WiFi.localIP()) + "&state=" + state + "&sw_version=" + String(VERSION);
   Serial.println(data);
   httpClient.put("/smarthome/device",contentType,data);
   int statusCode = httpClient.responseStatusCode();
 
   Serial.print("Update status code: ");
   Serial.println(statusCode);
+}
+
+String IpAddress2String(const IPAddress& ipAddress)
+{
+  return String(ipAddress[0]) + String(".") +\
+  String(ipAddress[1]) + String(".") +\
+  String(ipAddress[2]) + String(".") +\
+  String(ipAddress[3])  ; 
 }
