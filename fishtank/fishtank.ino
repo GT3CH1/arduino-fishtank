@@ -87,8 +87,6 @@ void setup() {
   // put your setup code here, to run once:
   server.begin();
   rest.variable("connected",&status);
-  rest.variable("c91124eb-74fb-41b7-b048-4f139d7587cf",&fishtank_light);
-  rest.variable("08b3f4fe-f8ad-4687-9be7-94d313eb0391",&fishtank_pump);
   rest.function("on", setOn);
   rest.function("off", setOff);
 }
@@ -108,6 +106,10 @@ void checkAndConnectWifi(){
     Serial.println("Connected");
     digitalWrite(LED_BUILTIN, LOW);
     printIP();
+    bool last_state = getLastState(LIGHT_GUID);
+    checkGuid(LIGHT_GUID, last_state);
+    last_state = getLastState(PUMP_GUID);
+    checkGuid(PUMP_GUID, last_state);
   }
 }
 
@@ -135,12 +137,12 @@ int setOff(String guid){
 }
 
 void checkGuid(String guid, bool state){
-  if (guid == "c91124eb-74fb-41b7-b048-4f139d7587cf"){
+  if (guid == LIGHT_GUID){
     pinMode(LIGHT_PIN,OUTPUT);
     digitalWrite(LIGHT_PIN, state ? LOW : HIGH);
     fishtank_light = state;
   }
-  if (guid == "08b3f4fe-f8ad-4687-9be7-94d313eb0391"){
+  if (guid == PUMP_GUID){
     pinMode(PUMP_PIN,OUTPUT);
     digitalWrite(PUMP_PIN, state ? HIGH : LOW);
     fishtank_pump = state;
@@ -156,12 +158,21 @@ void sendUpdate(String guid, bool state){
   String contentType = "application/x-www-form-urlencoded";
   String data = "guid=" + guid + "&ip=" + IpAddress2String(WiFi.localIP()) + "&state=" + state + "&sw_version=" + String(VERSION);
   Serial.println(data);
-  httpClient.put("/smarthome/device",contentType,data);
+  httpClient.put("/smarthome/update",contentType,data);
   int statusCode = httpClient.responseStatusCode();
 
   Serial.print("Update status code: ");
   Serial.println(statusCode);
 }
+
+bool getLastState(String guid){
+  WiFiClient wifi;
+  HttpClient httpClient = HttpClient(wifi, UPDATE_SERVER, SERVER_PORT);
+  httpClient.get("/smarthome/device/"+guid);
+  String response = httpClient.responseBody();
+  return response == "true";
+}
+
 
 String IpAddress2String(const IPAddress& ipAddress)
 {
