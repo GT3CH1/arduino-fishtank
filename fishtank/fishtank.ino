@@ -163,6 +163,8 @@ void sendUpdate(String guid, bool state){
 
   Serial.print("Update status code: ");
   Serial.println(statusCode);
+  httpClient.flush();
+  httpClient.stop();
 }
 
 bool getLastState(String guid){
