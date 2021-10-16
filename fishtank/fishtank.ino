@@ -104,10 +104,8 @@ void checkAndConnectWifi(){
         Serial.println("Connected");
         digitalWrite(LED_BUILTIN, LOW);
         printIP();
-        bool last_state = getLastState(LIGHT_GUID);
-        checkGuid(LIGHT_GUID, last_state);
-        last_state = getLastState(PUMP_GUID);
-        checkGuid(PUMP_GUID, last_state);
+        checkGuid(LIGHT_GUID, getLastState(LIGHT_GUID));
+        checkGuid(PUMP_GUID, getLastState(PUMP_GUID));
     }
 }
 
@@ -125,11 +123,13 @@ void loop() {
 
 int setOn(String guid){
     checkGuid(guid,true);
+    sendUpdate(guid,true);
     return 1;
 }
 
 int setOff(String guid){
     checkGuid(guid,false);
+    sendUpdate(guid,false);
     return 1;
 }
 
@@ -143,10 +143,7 @@ void checkGuid(String guid, bool state){
         pinMode(PUMP_PIN,OUTPUT);
         digitalWrite(PUMP_PIN, state ? HIGH : LOW);
         fishtank_pump = !state;
-        state = state;
     }
-    sendUpdate(guid,state);
-
 }
 
 void sendUpdate(String guid, bool state){
