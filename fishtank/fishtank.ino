@@ -17,7 +17,7 @@ StaticJsonDocument<512> doc;
 
 void handleSketchDownload() {
     const char* PATH = "/ota/arduino/update-%s-%d.bin";
-    const unsigned long CHECK_INTERVAL = 10000;
+    const unsigned long CHECK_INTERVAL = 60000;
 
     static unsigned long previousMillis;
 
@@ -83,10 +83,14 @@ void handleSketchDownload() {
 }
 
 void setup() {
+    Serial.begin(9600);
     server.begin();
     rest.variable("connected",&status);
     rest.function("on", setOn);
     rest.function("off", setOff);
+    checkAndConnectWifi();
+    checkGuid(PUMP_GUID, getLastState(PUMP_GUID));
+    checkGuid(LIGHT_GUID, getLastState(LIGHT_GUID));
 }
 
 void checkAndConnectWifi(){
@@ -104,8 +108,6 @@ void checkAndConnectWifi(){
         Serial.println("Connected");
         digitalWrite(LED_BUILTIN, LOW);
         printIP();
-        checkGuid(LIGHT_GUID, getLastState(LIGHT_GUID));
-        checkGuid(PUMP_GUID, getLastState(PUMP_GUID));
     }
 }
 
@@ -123,13 +125,11 @@ void loop() {
 
 int setOn(String guid){
     checkGuid(guid,true);
-    sendUpdate(guid,true);
     return 1;
 }
 
 int setOff(String guid){
     checkGuid(guid,false);
-    sendUpdate(guid,false);
     return 1;
 }
 
@@ -144,6 +144,7 @@ void checkGuid(String guid, bool state){
         digitalWrite(PUMP_PIN, state ? HIGH : LOW);
         fishtank_pump = !state;
     }
+    sendUpdate(guid,state);
 }
 
 void sendUpdate(String guid, bool state){
