@@ -119,6 +119,12 @@ void printIP(){
 void loop() {
     checkAndConnectWifi();
     WiFiClient client = server.available();
+    if (!client) {
+      return;
+    }
+    while(!client.available()){
+      delay(1);
+    }
     rest.handle(client);
     handleSketchDownload();
 }
