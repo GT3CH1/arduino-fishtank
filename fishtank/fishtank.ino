@@ -1,22 +1,33 @@
+#include "secret.h"
 #include <aa_lib.h>
 #include <aREST.h>
-#include "secret.h"
 int LIGHT_PIN = 2;
 int PUMP_PIN = 3;
 aREST m_rest = aREST();
 WiFiServer m_server(80);
 aa_lib automation(WIFI_SSID, WIFI_PASSWORD, DEVICE_TYPE, UPDATE_SERVER, SERVER_PORT, VERSION, API_KEY, API_ID);
-
+String ipAddr;
+String lastIpAddr;
 void setup() {
   // put your setup code here, to run once:
   automation.setup();
   m_server.begin();
   m_rest.function("on", setOn);
   m_rest.function("off", setOff);
+  checkGuid(LIGHT_GUID,automation.getLastState(LIGHT_GUID));
+  checkGuid(PUMP_GUID,automation.getLastState(PUMP_GUID));
 }
 
 void loop() {
   automation.checkAndConnectWifi();
+  automation.handleSketchDownload();
+  ipAddr = automation.getIP();
+  if (lastIpAddr != ipAddr){
+    lastIpAddr = ipAddr;
+    Serial.println("Updating in database");
+    automation.sendUpdate(LIGHT_GUID);
+    automation.sendUpdate(PUMP_GUID);
+  }
   WiFiClient client = m_server.available();
   if (!client) {
      return;
@@ -25,7 +36,6 @@ void loop() {
     delay(1);
   }
   m_rest.handle(client);
-  automation.handleSketchDownload();
 }
 
 int setOn(String guid){
@@ -48,5 +58,4 @@ void checkGuid(String guid, bool state){
     pinMode(PUMP_PIN,OUTPUT);
     digitalWrite(PUMP_PIN, state ? HIGH : LOW);
   }
-  automation.sendUpdate(guid,state);
 }
