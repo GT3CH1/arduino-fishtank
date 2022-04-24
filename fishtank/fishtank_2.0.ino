@@ -4,6 +4,8 @@
 #include "secret.h"
 int LIGHT_PIN = 2;
 int PUMP_PIN = 3;
+bool curr_pump_state = true;
+bool curr_light_state = false;
 const int REPORT_INTERVAL = 60;
 WiFiClient net;
 MqttClient  client(net);
@@ -32,7 +34,7 @@ void publishLightConfig()
   client.beginMessage("homeassistant/light/fishtank199959/config", payload.length(), retained, qos, dup);
   client.print(payload);
   client.endMessage();
-  
+  Serial.println("Sent light discovery message");
 }
 
 void publishPumpConfig()
@@ -54,6 +56,7 @@ void publishPumpConfig()
   client.beginMessage("homeassistant/switch/fishtank299959/config", payload.length(), retained, qos, dup);
   client.print(payload);
   client.endMessage();
+  Serial.println("Sent pump discovery message");
 }
 
 void connection_setup()
@@ -65,7 +68,7 @@ void connection_setup()
     Serial.print(".");
     delay(10000);
   }
-  Serial.println();
+  Serial.println(" -> Connected.");
   Serial.print("Attempting to connect to the MQTT broker: ");
   Serial.println(broker);
   client.setUsernamePassword(mqtt_user,mqtt_pass);
@@ -132,14 +135,16 @@ void onMessage(int messageSize)
   light_topic_check.trim();
   Serial.println("|"+recvTopic + ":"+ light_topic_check+"|");
   if(recvTopic == light_topic){
-    digitalWrite(LIGHT_PIN, payload == "ON" ? LOW : HIGH);
+    curr_light_state = payload == "ON";
+    digitalWrite(LIGHT_PIN, !curr_light_state);
     client.beginMessage(LIGHT_REPORT_TOPIC, payload.length(), retained, qos, dup);
     client.print(payload);
     client.endMessage();
     Serial.println("Setting tank light " + payload);
   }
   if (recvTopic == pump_topic){
-    digitalWrite(PUMP_PIN, payload != "ON" ? LOW : HIGH);
+    curr_pump_state = payload == "ON";
+    digitalWrite(PUMP_PIN, curr_pump_state);
     client.beginMessage(PUMP_REPORT_TOPIC, payload.length(), retained, qos, dup);
     client.print(payload);
     client.endMessage();
@@ -153,8 +158,21 @@ void onMessage(int messageSize)
 void loop() {
     client.poll();
   // publish a message roughly every second.
-  if (millis() - lastMillis > 1*1000) {
+  if (millis() - lastMillis > REPORT_INTERVAL*1000) {
     lastMillis = millis();
     connection_setup();
+    bool retained = false;
+    int qos = 1;
+    bool dup = false;
+    Serial.println("Sending current state");
+    String payload = curr_pump_state ? "ON":"OFF";
+    client.beginMessage(PUMP_REPORT_TOPIC, payload.length(), retained, qos, dup);
+    client.print(payload);
+    client.endMessage();
+    payload = curr_light_state ? "ON":"OFF";
+    client.beginMessage(PUMP_REPORT_TOPIC, payload.length(), retained, qos, dup);
+    client.print(payload);
+    client.endMessage();
+    Serial.println("Done");
   }
 }
